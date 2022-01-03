@@ -1,8 +1,5 @@
 // Variables used by Scriptable.
 // These must be at the very top of the file. Do not edit.
-// icon-color: orange; icon-glyph: phone;
-// Variables used by Scriptable.
-// These must be at the very top of the file. Do not edit.
 // icon-color: orange; icon-glyph: magic;
 // Adapted heavily from Github yaylinda/scriptable/CalendarEventsWidget.js
 
@@ -20,16 +17,21 @@ const GLOBAL = {
   callbackCalendarApp: 'calshow', 
 
   bgColorNow: new Color("#FF7700"),
-  bgColorLater: new Color("#007777"),
+  bgColorLater: new Color("#FFE900"),
   bgColorNone: new Color("#007700"),
   font: 'Arial',
-  fontColor: Color.white(),
+  fontColor: Color.black(),
   fontSize: 25,
   
-  stackHeight: 85,
-  stackWidth: 155,
+  stackHeight: 80,
+  stackWidth: 175,
   stackBorderColor: Color.black(),
   stackBorderWidth: 0,
+  stackSpacing: 10,
+  
+  onCallNo: 0,
+  onCallLater: 1,
+  onCallYes: 2
 };
 
 function drawStack(stack, date, status, widget, onCall) {
@@ -43,22 +45,21 @@ function drawStack(stack, date, status, widget, onCall) {
   stack.borderColor = GLOBAL.stackBorderColor;
   stack.borderWidth = GLOBAL.stackBorderWidth;
   stackNested.layoutVertically();
-  const dateText1 = stackNested.addText(" " + day);
-  const dateText2 = stackNested.addText(" " + month + " " + num);
+  const dateText1 = stackNested.addText("   " + day);
+  const dateText2 = stackNested.addText("   " + month + " " + num);
   dateText1.textColor = GLOBAL.fontColor;
   dateText1.font = new Font(GLOBAL.font, GLOBAL.fontSize);
   dateText2.textColor = GLOBAL.fontColor;
   dateText2.font = new Font(GLOBAL.font, GLOBAL.fontSize);
-  
-  if (status == 1)
+  if (status == GLOBAL.onCallYes)
   {
     stack.backgroundColor = GLOBAL.bgColorNow;
   }
-  else if (status == 2)
+  else if (status == GLOBAL.onCallLater)
   {
     stack.backgroundColor = GLOBAL.bgColorLater;
   }
-  else if (status == 3)
+  else if (status == GLOBAL.onCallLater)
   {
     stack.backgroundColor = GLOBAL.bgColorLater;
   }
@@ -80,34 +81,34 @@ async function checkForEvents()
   let tmrwEvents = await CalendarEvent.tomorrow([calendar]);
   let restOfToday = await CalendarEvent.between(now, nextMidnight, [calendar])
   
-  const status = 0;
+  let todayStatus = GLOBAL.onCallNo
+  let tomorrowStatus = GLOBAL.onCallNo
   todayEvents.forEach((event) => {
     const start = new Date(event.startDate);
     const end = new Date(event.endDate);
     if (now >= start && now <= end){
-       status = 1
+       todayStatus = GLOBAL.onCallYes;
     }
   });
-  if (restOfToday.length > 0) {
-    status = 2;
+  if (restOfToday.length > 0 && todayStatus != GLOBAL.onCallYes) {
+    todayStatus = GLOBAL.onCallLater;
   }
-  
   if (tmrwEvents.length > 0) {
-    status = 3;
+    tomorrowStatus = GLOBAL.onCallLater;
   }
-  return status;
+  return [todayStatus, tomorrowStatus];
 }
 
 const widget = new ListWidget(); 
-widget.setPadding(0,0,0,0);
 const mainStack = widget.addStack();
 const todayStack = mainStack.addStack();
 const tomorrowStack = mainStack.addStack();
-mainStack.spacing = 10;
+let status = await checkForEvents();
+widget.setPadding(0,0,0,0);
+mainStack.spacing = GLOBAL.stackSpacing;
 mainStack.layoutVertically();
-const status = await checkForEvents();
-drawStack(todayStack, new Date(), status, widget);
-drawStack(tomorrowStack, new Date().setDate(new Date().getDate()+1), status, widget);
+drawStack(todayStack, new Date(), status[0], widget);
+drawStack(tomorrowStack, new Date().setDate(new Date().getDate()+1), status[1], widget);
 
 if (args.widgetParameter === 'callback')
 {
