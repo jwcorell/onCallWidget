@@ -59,10 +59,6 @@ function drawStack(stack, date, status, widget, onCall) {
   {
     stack.backgroundColor = GLOBAL.bgColorLater;
   }
-  else if (status == GLOBAL.onCallLater)
-  {
-    stack.backgroundColor = GLOBAL.bgColorLater;
-  }
   else
   {
     stack.backgroundColor = GLOBAL.bgColorNone;
